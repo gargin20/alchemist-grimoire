@@ -17,6 +17,9 @@ function Dashboard() {
     const [question, setQuestion] = useState('');
     const [aiResponse, setAiResponse] = useState('');
     const [isThinking, setIsThinking] = useState(false);
+    const totalDoses = logs.length;
+    const takenDoses = logs.filter(log => log.status === 'Taken').length;
+    const adherenceScore = totalDoses > 0 ? Math.round((takenDoses / totalDoses) * 100) : 0;
 
     useEffect(() => {
         if (!user) {
@@ -141,6 +144,48 @@ function Dashboard() {
                     </div>
                 )}
             </section>
+
+            {/* NEW: Analytics Dashboard */}
+                <section className="mb-10">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        Health Analytics
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Stat Card 1: Health Score */}
+                        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-slate-100">
+                                <div className="h-full bg-indigo-500 transition-all duration-1000" style={{ width: `${adherenceScore}%` }}></div>
+                            </div>
+                            <span className="text-slate-500 text-sm font-medium mb-1">Adherence Score</span>
+                            <div className="text-4xl font-bold text-slate-800">{adherenceScore}%</div>
+                            <p className="text-xs text-slate-400 mt-2">{adherenceScore > 80 ? 'Excellent consistency!' : 'Keep pushing forward!'}</p>
+                        </div>
+
+                        {/* Stat Card 2: Total Taken */}
+                        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                            <div>
+                                <span className="text-slate-500 text-sm font-medium block">Doses Taken</span>
+                                <strong className="text-2xl text-slate-800">{takenDoses}</strong>
+                            </div>
+                        </div>
+
+                        {/* Stat Card 3: Total Missed */}
+                        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </div>
+                            <div>
+                                <span className="text-slate-500 text-sm font-medium block">Doses Missed</span>
+                                <strong className="text-2xl text-slate-800">{totalDoses - takenDoses}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
                 
