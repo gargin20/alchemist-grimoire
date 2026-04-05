@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Medication = require('../models/Medication');
-const Log = require('../models/Log'); // We need the logs to find patterns!
+const Log = require('../models/Log');
 
 const startCronJobs = () => {
     console.log("⏳ AI-Powered Background Cron Jobs Initialized...");
@@ -19,8 +19,8 @@ const startCronJobs = () => {
     // 2. Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    // 3. The Automation Loop (Running every minute for testing)
-    cron.schedule('* * * * *', async () => {
+    // 3. The Automation Loop (Leashed! Now runs once a day at midnight)
+    cron.schedule('0 0 * * *', async () => {
         console.log("⏰ CRON TRIGGERED: Analyzing schedules and predicting adherence...");
 
         try {

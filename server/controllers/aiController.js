@@ -2,7 +2,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Medication = require('../models/Medication');
 const Log = require('../models/Log');
 
-// Initialize Gemini with your API key
+// Initialize Gemini with your API key (done once for the whole file)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // @desc    Ask the AI Assistant a question about your schedule
@@ -40,8 +40,8 @@ exports.askAssistant = async (req, res) => {
         2. Keep your answer concise (under 3 sentences).
         3. Adopt a clear, professional, and supportive tone.
         `;
+        
         // 3. Call the Gemini API
-        // We use gemini-1.5-flash as it is extremely fast and perfect for text tasks
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
@@ -52,5 +52,66 @@ exports.askAssistant = async (req, res) => {
     } catch (error) {
         console.error("Gemini API Error:", error);
         res.status(500).json({ message: "The crystal ball is currently cloudy. Try again later." });
+    }
+};
+
+// @desc    Scan a pill bottle and check for drug interactions
+// @route   POST /api/ai/scan
+exports.scanPill = async (req, res) => {
+    console.log("👁️ Oracle Eye Activated: Scanning image...");
+    try {
+        const { image } = req.body;
+        const userId = req.user.id; 
+
+        if (!image) return res.status(400).json({ error: "No image provided" });
+
+        // 1. Strip the HTML prefix from the base64 image string so Google can read it
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+
+        // 2. Fetch the user's CURRENT active medications to check for interactions
+        const currentMeds = await Medication.find({ user: userId });
+        const currentMedNames = currentMeds.map(med => med.name).join(', ');
+
+        // 3. We use the existing genAI instance declared at the top!
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        // 4. The Magic Prompt: Read the image AND act as a pharmacist
+        const prompt = `
+        You are a world-class pharmacist and OCR system.
+        1. Look at the attached image of a pill bottle label. Extract the medication 'name' and 'dosage'.
+        2. The user is CURRENTLY taking the following medications: ${currentMedNames || "None"}.
+        3. Perform a critical drug interaction check between the newly scanned medication and their current list.
+        
+        Respond strictly with a JSON object in this exact format (do not include markdown wrapping like \`\`\`json):
+        {
+            "name": "Extracted Name",
+            "dosage": "Extracted Dosage",
+            "safetyWarning": "null if perfectly safe, OR a 1-sentence severe warning if there is a dangerous drug interaction."
+        }
+        `;
+
+        const imageParts = [
+            {
+                inlineData: {
+                    data: base64Data,
+                    mimeType: "image/jpeg"
+                }
+            }
+        ];
+
+        // 5. Ask Gemini to analyze the image + prompt
+        const result = await model.generateContent([prompt, ...imageParts]);
+        const responseText = result.response.text();
+        
+        // Clean up the response to ensure it's valid JSON
+        const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+        const extractedData = JSON.parse(cleanedText);
+
+        console.log("🔮 Scan Complete:", extractedData);
+        res.json(extractedData);
+
+    } catch (error) {
+        console.error("Scanner Error:", error);
+        res.status(500).json({ error: "Failed to read the label. Please try again." });
     }
 };

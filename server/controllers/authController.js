@@ -10,17 +10,37 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 exports.registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        // 1. Grab ALL fields from the React form
+        const { 
+            name, email, password,
+            age, sex, bloodGroup,
+            emergencyContactName, emergencyContactPhone 
+        } = req.body;
 
-        // Check if user already exists
+        // 2. Validate essential fields
+        if (!name || !email || !password || !emergencyContactPhone) {
+            return res.status(400).json({ message: 'Please fill in all required fields, including the emergency contact.' });
+        }
+
+        // 3. Check if user already exists
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Create user
-        const user = await User.create({ name, email, password });
+        // 4. Create user with the full medical profile
+        const user = await User.create({ 
+            name, 
+            email, 
+            password,
+            age,
+            sex,
+            bloodGroup,
+            emergencyContactName,
+            emergencyContactPhone
+        });
 
+        // 5. Send back the success response
         if (user) {
             res.status(201).json({
                 _id: user.id,
@@ -28,6 +48,8 @@ exports.registerUser = async (req, res) => {
                 email: user.email,
                 token: generateToken(user._id)
             });
+        } else {
+            res.status(400).json({ message: 'Invalid user data' });
         }
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const startCronJobs = require('./utils/cronJobs');
+const twilioRoutes = require('./routes/twilioRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +22,8 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/meds', require('./routes/medRoutes'));
 app.use('/api/logs', require('./routes/logRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/calendar', require('./routes/calendarRoutes'));
+app.use('/api/twilio', twilioRoutes);
 
 // A simple test route
 app.get('/', (req, res) => {

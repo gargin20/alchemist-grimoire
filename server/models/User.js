@@ -14,6 +14,23 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, 'Please add a password']
+    },
+    // NEW: Medical Onboarding Data
+    age: { 
+        type: Number 
+    },
+    sex: { 
+        type: String 
+    },
+    bloodGroup: { 
+        type: String 
+    },
+    // NEW: Emergency Twilio Data
+    emergencyContactName: { 
+        type: String 
+    },
+    emergencyContactPhone: { 
+        type: String 
     }
 }, { timestamps: true });
 
