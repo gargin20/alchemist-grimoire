@@ -115,3 +115,65 @@ exports.scanPill = async (req, res) => {
         res.status(500).json({ error: "Failed to read the label. Please try again." });
     }
 };
+
+// Add this helper function at the top of your file (outside the exports)
+// It converts the uploaded image into a format Gemini can see
+const fileToGenerativePart = (buffer, mimeType) => {
+    return {
+        inlineData: {
+            data: buffer.toString("base64"),
+            mimeType
+        },
+    };
+};
+
+// @desc    Scan a prescription image and extract medication details
+// @route   POST /api/ai/scan-prescription
+exports.scanPrescription = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "No image file provided" });
+        }
+
+        console.log("📸 Scanning Prescription Image...");
+
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        // 2. Build the System Prompt (The rules for the AI)
+        const prompt = `
+        You are a smart, professional, and helpful medication adherence assistant. 
+        You have access to the user's medication schedule and log history.
+        
+        Active schedule:
+        ${JSON.stringify(meds)}
+
+        Recent log history (Taken/Missed):
+        ${JSON.stringify(logs)}
+
+        User's Question: "${question}"
+
+        Instructions:
+        1. Answer the question accurately based ONLY on the schedule and logs provided above.
+        2. Keep your answer concise (under 3 sentences).
+        3. Adopt a clear, professional, and supportive tone.
+        4. CRITICAL MEDICAL GUARDRAIL: If the user describes new symptoms (e.g., "I feel dizzy", "my stomach hurts") or asks what new medication they should take, YOU MUST STRICTLY REFUSE. Reply exactly with: "I am a medication tracking assistant, not a doctor. Because you are experiencing symptoms, please consult your healthcare provider immediately or seek emergency medical care."
+        `;
+
+        const imagePart = fileToGenerativePart(req.file.buffer, req.file.mimetype);
+
+        // Send the prompt AND the image to Gemini
+        const result = await model.generateContent([prompt, imagePart]);
+        const responseText = result.response.text();
+
+        // Clean the JSON response (in case Gemini wraps it in markdown)
+        const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsedData = JSON.parse(cleanJson);
+
+        console.log("✅ Prescription Parsed Successfully:", parsedData);
+        res.status(200).json(parsedData);
+
+    } catch (error) {
+        console.error("Prescription Scan Error:", error);
+        res.status(500).json({ error: "Failed to process prescription image." });
+    }
+};

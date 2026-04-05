@@ -1,13 +1,16 @@
 const express = require('express');
 const router = express.Router();
-// 👇 FIX: Import both functions from the controller!
-const { askAssistant, scanPill } = require('../controllers/aiController');
+const aiController = require('../controllers/aiController');
 const { protect } = require('../middleware/authMiddleware');
+const multer = require('multer'); 
 
-// Protect this route so it only reads data for the logged-in user
-router.route('/ask').post(protect, askAssistant);
+// Configure multer to store files in memory
+const upload = multer({ storage: multer.memoryStorage() });
 
-// 👇 FIX: Use the directly imported function
-router.post('/scan', protect, scanPill);
+router.post('/ask', protect, aiController.askAssistant);
+router.post('/scan', protect, aiController.scanPill);
+
+// NEW VISION ROUTE
+router.post('/scan-prescription', protect, upload.single('image'), aiController.scanPrescription);
 
 module.exports = router;
