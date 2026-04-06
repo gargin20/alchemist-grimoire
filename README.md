@@ -1,8 +1,8 @@
-# 🧬 ET Cortex (Health System)
+# 🧬 Alchemist Grimoire (Health System)
 
 > An AI-powered healthcare ecosystem that bridges the gap between patients, doctors, and families through multimodal AI and active telephony escalation.
 
-![ET Cortex Hero Image/GIF](link-to-a-screenshot-or-gif-of-your-app-here)
+
 
 ## 📖 Overview
 Medication non-adherence leads to millions of preventable hospitalizations every year. ET Cortex solves this by removing friction from the patient experience. Instead of manual data entry, patients can upload a photo of their prescription, ask questions using their voice, and rely on automated, real-time emergency phone calls to family members if a critical dose is missed.
@@ -26,8 +26,8 @@ Medication non-adherence leads to millions of preventable hospitalizations every
 
 **1. Clone the repository**
 \`\`\`bash
-git clone https://github.com/yourusername/et-cortex.git
-cd et-cortex
+git clone https://github.com/gargin20/alchemist-grimoire.git
+cd alchemist-grimoire
 \`\`\`
 
 **2. Install Dependencies**
@@ -63,7 +63,7 @@ npm run dev
 
 # Terminal 2: Start the frontend
 cd client
-npm start
+npm run dev
 \`\`\`
 
 ## 🧠 Why I Built This
