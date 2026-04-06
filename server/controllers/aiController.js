@@ -137,26 +137,31 @@ exports.scanPrescription = async (req, res) => {
 
         console.log("📸 Scanning Prescription Image...");
 
+        // 1. Fetch the user's current medications from the database! (THIS IS THE FIX)
+        const currentMeds = await Medication.find({ user: req.user.id });
+        const currentMedNames = currentMeds.map(med => med.name).join(', ');
+
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        // 2. Build the System Prompt (The rules for the AI)
+        // 2. The exact instructions for the AI pharmacist (Now with interaction checking)
         const prompt = `
-        You are a smart, professional, and helpful medication adherence assistant. 
-        You have access to the user's medication schedule and log history.
+        You are an expert pharmacist AI. Carefully read the uploaded prescription image.
+        Extract the primary medication details.
         
-        Active schedule:
-        ${JSON.stringify(meds)}
+        The user is CURRENTLY taking the following medications: ${currentMedNames || "None"}.
+        
+        Evaluate if there are any immediate, highly dangerous drug interactions between the newly scanned prescription and their current medications. Also check for general severe safety warnings (e.g., "Take with food", "Do not mix with alcohol"). 
+        
+        If there are NO dangerous interactions or severe warnings, output exactly the string "null" for safetyWarning.
 
-        Recent log history (Taken/Missed):
-        ${JSON.stringify(logs)}
-
-        User's Question: "${question}"
-
-        Instructions:
-        1. Answer the question accurately based ONLY on the schedule and logs provided above.
-        2. Keep your answer concise (under 3 sentences).
-        3. Adopt a clear, professional, and supportive tone.
-        4. CRITICAL MEDICAL GUARDRAIL: If the user describes new symptoms (e.g., "I feel dizzy", "my stomach hurts") or asks what new medication they should take, YOU MUST STRICTLY REFUSE. Reply exactly with: "I am a medication tracking assistant, not a doctor. Because you are experiencing symptoms, please consult your healthcare provider immediately or seek emergency medical care."
+        Return the output STRICTLY as a valid JSON object with the following keys, and nothing else (no markdown formatting):
+        {
+            "name": "Medication Name",
+            "dosage": "Dosage amount (e.g., 500mg)",
+            "time": "Best estimated time to take it in 24-hour HH:MM format (e.g., 08:00 for morning)",
+            "frequency": "Must be exactly one of: 'Daily', 'Weekly', or 'As Needed'",
+            "safetyWarning": "Warning text or 'null'"
+        }
         `;
 
         const imagePart = fileToGenerativePart(req.file.buffer, req.file.mimetype);
